@@ -1,0 +1,114 @@
+---
+title: "Untitled"
+format: pdf
+editor: source
+---
+
+We begin by installing `tidyverse`.
+
+```{r}
+#| eval: false
+install.packages("tidyverse")
+```
+
+Load the library tidyverse by calling `library()` function
+
+```{r}
+library(tidyverse)
+```
+
+`mpg` is a dataframe from `ggplot2` package
+
+```{r}
+print(mpg)
+```
+
+```{r}
+head(mpg)
+```
+
+## Get the metadata
+
+Dimentions of a dataframe
+
+```{r}
+dim(mpg)
+```
+
+Number of rows
+```{r}
+nrow(mpg)
+```
+
+Number of columns
+
+```{r}
+ncol(mpg)
+```
+
+Column names
+
+```{r}
+colnames(mpg)
+```
+
+Class of `mpg`
+
+```{r}
+class(mpg)
+```
+
+```{r}
+mpg_df = as.data.frame(mpg)
+```
+
+```{r}
+class(mpg_df)
+```
+
+
+```{r}
+print(mpg_df)
+```
+
+
+## Subsetting a dataframe
+
+Column selection using `select()` function from `dplyr`
+
+```{r}
+select(.data = mpg, year, model)
+```
+
+```{r}
+select(mpg, starts_with("c"))
+```
+
+```{r}
+select(mpg, ends_with("y"))
+```
+
+```{r}
+select(mpg, contains("e"))
+```
+
+
+Filtering rows
+
+```{r}
+slice(.data = mpg, 10:15)
+```
+
+```{r}
+filter(.data = mpg, year == 2008)
+```
+
+```{r}
+filter(.data = mpg, (year == 2008 & manufacturer == "audi"))
+```
+
+
+```{r}
+dt = readr::read_csv("Data/svcckww1jskrstnz_csv.zip")
+```
+
