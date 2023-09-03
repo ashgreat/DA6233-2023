@@ -1,0 +1,257 @@
+---
+title: "Tech Firms Exploration"
+author: "Ashwin Malshe"
+date: "2022-09-06"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+**Important**
+
+If you haven't installed `tidyverse` package before, do this:
+
+Install `tidyverse` package by running the following command in the console. This needs to be done only once so make sure that you don't run it from your Rmarkdown code chunk.
+
+install.packages("tidyverse")
+
+
+Once the installation is complete, load the library
+
+```{r message=FALSE, warning=FALSE}
+library(tidyverse)
+```
+
+
+## Data manipulation
+
+
+Read the CSV file
+
+```{r data-read}
+
+dt = read_csv("tech_financials.csv")
+
+```
+
+### Frequency distribution 
+
+```{r}
+count(dt, fyear)
+```
+
+
+
+### Select columns
+
+Use `select()` function from `dplyr` package to select columns
+
+In the following example, we will select a handful of columns and then save the resulting dataframe into `dt1`
+
+```{r}
+dt1 = dplyr::select(.data = dt, conm, fyear, sale)
+```
+
+Print dt1
+```{r}
+dt1
+```
+
+### Choose rows from a dataframe
+
+Base R provides an easy way to select top or bottom N rows using `head()` and `tail()` functions
+
+The default is to return first 6 or last 6 observations
+
+```{r}
+head(dt1, n = 10)
+```
+
+```{r}
+tail(dt1)
+```
+We can choose the middle rows by using the `slice()` function from `dplyr` package
+
+```{r}
+slice(dt1, 10:15)
+```
+
+The `filter()` function from `dplyr` allows you to select rows based on a condition.
+
+```{r}
+filter(dt1, sale > 100000)
+```
+
+It also allows including two conditions
+
+```{r}
+filter(dt1, 
+       sale > 100000, 
+       fyear > 2020)
+```
+
+### Creating a new variable
+
+`mutate()` function from `dplyr` allows you to create new variables
+
+Let's create a new variable `sale_bil` which stores sales in billions USD
+
+```{r}
+mutate(dt1, sale_bil = sale / 1000)
+```
+
+Create multiple variables
+
+```{r}
+mutate(dt1,
+       sale_bil = sale / 1000,
+       sale_sq = round(sale_bil^2, 2),
+       log_sale = log(sale))
+```
+
+### Summarize data
+
+`summarize()` function from `dplyr` helps in getting summaries as a dataframe.
+
+Use `dt` to get averages of sales, total assets, profits, and advertising
+
+```{r}
+
+summarize(dt,
+          sale_mean = mean(sale),
+          at_mean = mean(at),
+          oibdp_mean = mean(oibdp),
+          xad_mean = mean(xad))
+
+```
+
+```{r}
+select(dt, xad)
+```
+
+
+
+We get a missing value in return for `xad_mean`. This is because by default `mean()` requires non-missing values. We can remove the `NA` from `xad` before taking the mean by using `na.rm` argument inside `mean()`
+
+```{r}
+
+summarize(dt,
+          sale_mean = mean(sale),
+          at_mean = mean(at),
+          oibdp_mean = mean(oibdp),
+          xad_mean = mean(xad, na.rm = TRUE))
+
+```
+
+
+
+### Summaries by groups.
+
+We want to find the averages of the above variables for each company separately. For this we can use `group_by()` function from `dplyr`
+
+```{r}
+summarize(group_by(dt, conm), # Note how I used group_by
+          sale_mean = mean(sale),
+          at_mean = mean(at),
+          oibdp_mean = mean(oibdp),
+          xad_mean = mean(xad, na.rm = TRUE))
+```
+
+## Pipes
+
+```{r}
+dt1 = select(dt, conm, fyear, sale)
+dt2 = filter(dt1, sale > 100000)
+
+```
+
+```{r}
+dt1 = dt %>% select(.data = ., conm, fyear, sale)
+```
+
+
+
+From https://www.techopedia.com/definition/3410/pipe
+
+*A pipe is a method used to pass information from one program process to another. Unlike other types of interprocess communication, a pipe only offers one-way communication by passing a parameter or output from one process to another. The information that is passed through the pipe is held by the system until it can be read by the receiving process. Pipes are primarily used in programming on Unix systems.*
+
+We will use `%>%` to pipe output data from one `tidyverse` function to the next.
+This pipe originates from `magrittr` package. The keyboard shortcut is 
+
+Shift + Command + M (Mac)
+Shift + Control + M (Windows)
+
+As an example, we will select a few variables and then pass them on to summarize using a pipe
+
+```{r}
+dt %>% 
+  select(.data = ., 
+         conm, fyear, sale, at, oibdp, xad) %>% 
+  summarize(.data = .,
+            sale_mean = mean(sale),
+            at_mean = mean(at),
+            oibdp_mean = mean(oibdp),
+            xad_mean = mean(xad, na.rm = TRUE))
+```
+
+Can you create grouped means for each company?
+
+
+```{r}
+dt %>% 
+  select(.data = ., 
+         conm, fyear, sale, at, oibdp, xad) %>% 
+  group_by(.data = ., conm) %>% 
+  summarize(.data = .,
+            sale_mean = mean(sale),
+            at_mean = mean(at),
+            oibdp_mean = mean(oibdp),
+            xad_mean = mean(xad, na.rm = TRUE))
+```
+
+
+
+### Joining dataframes
+
+`dplyr` provides several `_join` functions inspired by SQL.
+
+```{r echo=FALSE}
+knitr::include_graphics("joins.png")
+```
+
+
+
+We will create summary of sales by fyear and join it to dt1
+
+
+```{r}
+dt1_summary = dt1 %>% 
+  group_by(fyear) %>% 
+  summarize(sale_mean = mean(sale))
+```
+
+```{r}
+dt1_summary
+```
+
+
+```{r}
+dt2 = inner_join(dt1, dt1_summary, by = "fyear")
+```
+
+```{r}
+dt2
+```
+
+
+```{r}
+dt1 %>% 
+  group_by(fyear) %>% 
+  mutate(sale_mean = mean(sale),
+         sale_ratio = scales::percent(sale / sale_mean, accuracy = 0.01),
+         sale = scales::dollar(sale),
+         sale_mean = scales::dollar(sale_mean))
+```
+
