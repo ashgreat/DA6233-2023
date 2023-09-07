@@ -97,6 +97,21 @@ mutate(dt1,
        log_sale = log(sale))
 ```
 
+
+Use `mutate()` to change the formatting of variables
+
+Learn more about `percent()` function from `scales` package, which is a part of `tidyverse`. This function is now superseded by `label_percent()` function, which is more complex to use and you don't need to switch to it just yet.
+
+```{r mutate-scales}
+dt1 %>% 
+  group_by(fyear) %>% 
+  mutate(sale_mean = mean(sale),
+         sale_ratio = scales::percent(sale / sale_mean, accuracy = 0.01),
+         sale = scales::dollar(sale),
+         sale_mean = scales::dollar(sale_mean))
+```
+
+
 ### Summarize data
 
 Base R has `summary()` function that provides basic summary of the variables.
