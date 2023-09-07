@@ -38,12 +38,22 @@ dt = read_csv(here::here("Data", "tech_stocks_csv.zip"),
 
 ### Frequency distribution 
 
-```{r get-count-fyear}
+```{r}
 count(dt, fyear)
 ```
 
-```{r get-count-conm}
+```{r}
 count(dt, conm)
+```
+```{r}
+count(dt, fyear, conm)
+```
+
+```{r}
+select(
+  filter(dt, fyear == 2009 | fyear == 2023),
+  fyear, conm
+)
 ```
 
 
@@ -53,12 +63,12 @@ Use `select()` function from `dplyr` package to select columns
 
 In the following example, we will select a handful of columns and then save the resulting dataframe into `dt1`
 
-```{r select}
+```{r}
 dt1 = dplyr::select(.data = dt, conm, fyear, sale)
 ```
 
 Print dt1
-```{r print-dt1}
+```{r}
 dt1
 ```
 
@@ -69,7 +79,7 @@ dt1
 
 The variable `sale` is in million USD. Let's create a new variable `sale_bil` which stores sales in billion USD.
 
-```{r mutate}
+```{r}
 mutate(dt1, 
        sale_bil = round(sale / 1000, 0)
        )
@@ -77,7 +87,7 @@ mutate(dt1,
 
 Create multiple variables
 
-```{r mutate-multiple}
+```{r}
 mutate(dt1,
        sale_bil = sale / 1000,
        sale_sq = round(sale_bil^2, 2), # Create square of sales and round it to 2 decimals
@@ -86,18 +96,19 @@ mutate(dt1,
 
 ### Summarize data
 
-Base R has `summary()` function that provides basic summary of the variables.
-```{r summary}
-summary(dt1)
-
-```
-
 `summarize()` function from `dplyr` helps in getting summaries as a dataframe.
 
 Use `dt` to get averages of sales, total assets, profits, and advertising
 
+```{r}
 
-```{r summarize}
+  summary(dt1)
+
+```
+
+
+```{r}
+
 summarize(dt,
           sale_mean = mean(sale),
           at_mean = mean(at),
@@ -106,7 +117,7 @@ summarize(dt,
 
 ```
 
-```{r missing-xrd}
+```{r}
 select(dt, xad)
 ```
 
@@ -114,7 +125,8 @@ select(dt, xad)
 
 We get a missing value in return for `xad_mean`. This is because by default `mean()` requires non-missing values. We can remove the `NA` from `xad` before taking the mean by using `na.rm` argument inside `mean()`
 
-```{r summarize-xrd}
+```{r}
+
 summarize(dt,
           sale_mean = mean(sale),
           at_mean = mean(at),
@@ -123,15 +135,6 @@ summarize(dt,
 
 ```
 
-Using `across()` function  to apply a function to multiple columns in `summarize()`
-
-```{r summarize-across}
-  summarize(dt,
-            across(
-              c(sale, at, oibdp, xad), \(x) mean(x, na.rm = TRUE)
-              )
-            )
-```
 
 
 ### Summaries by groups.
@@ -139,7 +142,7 @@ Using `across()` function  to apply a function to multiple columns in `summarize
 Next, We want to find the averages of the above variables for each company separately. For this we can use `group_by()` function from `dplyr`
 
 
-```{r summarize-group-by}
+```{r}
 summarize(
   group_by(dt, conm), # Note how I used group_by
   sale_mean = mean(sale),
@@ -153,7 +156,7 @@ summarize(
 
 This is where I would like to introduce the concept of pipes. Consider two steps to create a subset of `dt`. 
 
-```{r pipes-1}
+```{r}
 dt1 = select(dt, conm, fyear, sale)
 dt2 = filter(dt1, sale > 100000)
 
@@ -162,12 +165,29 @@ dt2 = filter(dt1, sale > 100000)
 
 These two steps can be combined into one step. Can you think of any reasons for why this is useful?
 
-```{r pipes-2}
+```{r}
 dt1 = dt %>% select(.data = ., conm, fyear, sale)
 ```
 
-```{r pipes-3}
+```{r}
 dt1 = dt %>% select(conm, fyear, sale)
+```
+
+
+
+```{r}
+c("A", "B", "C") |> select(conm, fyear, sale)
+```
+
+
+```{r}
+summary(lm(formula = sale ~ at + cogs, data = dt))
+```
+
+```{r}
+dt %>% 
+  lm(sale ~ at + cogs) %>% 
+  summary()
 ```
 
 
@@ -186,7 +206,7 @@ Shift + Control + M (Windows)
 
 As an example, we will select a few variables and then pass them on to summarize using a pipe
 
-```{r pipes-4}
+```{r}
 dt %>% 
   select(.data = ., 
          conm, fyear, sale, at, oibdp, xad) %>% 
@@ -200,7 +220,7 @@ dt %>%
 Can you create grouped means for each company?
 
 
-```{r pipes-5}
+```{r}
 dt %>% 
   select(.data = ., 
          conm, fyear, sale, at, oibdp, xad) %>% 
@@ -213,7 +233,7 @@ dt %>%
 ```
 
 
-```{r pipes-5-simplified}
+```{r}
 dt %>% 
   select(conm, fyear, sale, at, oibdp, xad) %>% 
   group_by(conm) %>% 
@@ -223,7 +243,7 @@ dt %>%
             xad_mean = mean(xad, na.rm = TRUE))
 ```
 
-```{r pipes-6-}
+```{r}
 dt %>% 
   select(conm, fyear, sale, at, oibdp, xad) %>% 
   group_by(conm) %>% 
@@ -232,94 +252,79 @@ dt %>%
     )
     )
 ```
-When will the pipe fail?
-
-Case 1. When the object on left does not match the required object to the function on right
-
-```{r pipes-fail-1}
-c("A", "B", "C") |> select(conm, fyear, sale)
-```
-
-Case 2. When the object on left is passed to incorrect argument of the function on right
-
-```{r lm}
-summary(lm(formula = sale ~ at + cogs, data = dt))
-```
-
-```{r pipes-fail-2}
-dt %>% 
-  lm(sale ~ at + cogs) %>% 
-  summary()
-```
 
 
 ### Joining dataframes
 
 `dplyr` provides several `_join` functions inspired by SQL.
 
-https://learnsql.com/blog/learn-and-practice-sql-joins/
+```{r echo=FALSE}
+knitr::include_graphics("joins.png")
+```
+
+
 
 We will create summary of sales by fyear and join it to dt1
 
 
-```{r join-summary}
+```{r}
 dt1_summary = dt1 %>% 
   group_by(fyear) %>% 
   summarize(sale_mean = mean(sale))
 ```
 
-```{r join-summary-print}
+```{r}
 dt1_summary
 ```
 
 
-```{r join-summary-filter}
+```{r}
 dt1_summary_filtered = dt1_summary %>% 
   filter(fyear > 2009 & fyear < 2023)
 ```
 
 
-```{r inner-join}
+```{r}
 dt2 = inner_join(dt1, dt1_summary, by = "fyear")
 ```
 
-```{r print-inner-join}
+```{r}
 dt2
 ```
 
 
-```{r left-join}
+```{r}
 dt3 = left_join(dt1, dt1_summary_filtered, by = c("fyear"))
 ```
 
 
-```{r print-left-join}
+```{r}
 dt3 
 ```
 
-### Transposing a dataframe
 
-Sometimes we want to rearrange the information in the columns such that it will appear in rows.
+```{r}
+dt1 %>% 
+  group_by(fyear) %>% 
+  mutate(sale_mean = mean(sale),
+         sale_ratio = scales::percent(sale / sale_mean, accuracy = 0.01),
+         sale = scales::dollar(sale),
+         sale_mean = scales::dollar(sale_mean))
+```
 
-```{r pivot-dt}
+
+```{r}
 dt4 = dt %>% 
   select(conm, fyear, sale, at, xrd)
 ```
 
-```{r print-pivot-dt}
+```{r}
 dt4
+
 ```
 
-`pivot_longer()` will transpose a selected subset of columns into two columns by default labeled `name` and `value`
 
-```{r pivot-longer}
-dt4 %>% 
-  pivot_longer(cols = c(sale, at, xrd))
-```
-
-You can customize the names of those columns
-
-```{r pivot-longer-custom-names}
+```{r}
 dt4 %>% 
   pivot_longer(cols = c(sale, at, xrd),
                names_to = "metric_name",

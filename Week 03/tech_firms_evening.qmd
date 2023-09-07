@@ -42,6 +42,19 @@ dt = read_csv(here::here("Data", "tech_stocks_csv.zip"),
 count(dt, fyear)
 ```
 
+```{r}
+filter(
+  select(dt, conm, fyear),
+  fyear == 2009 | fyear == 2023
+)
+```
+```{r}
+filter(
+  select(dt, conm, fyear),
+  !(fyear > 2009 & fyear < 2023)
+)
+```
+
 ```{r get-count-conm}
 count(dt, conm)
 ```
@@ -71,7 +84,7 @@ The variable `sale` is in million USD. Let's create a new variable `sale_bil` wh
 
 ```{r mutate}
 mutate(dt1, 
-       sale_bil = round(sale / 1000, 0)
+       sale_bil = round(sale / 1000, 2)
        )
 ```
 
@@ -89,8 +102,11 @@ mutate(dt1,
 Base R has `summary()` function that provides basic summary of the variables.
 ```{r summary}
 summary(dt1)
-
 ```
+```{r}
+class(summary(dt1))
+```
+
 
 `summarize()` function from `dplyr` helps in getting summaries as a dataframe.
 
@@ -103,13 +119,11 @@ summarize(dt,
           at_mean = mean(at),
           oibdp_mean = mean(oibdp),
           xad_mean = mean(xad))
-
 ```
 
 ```{r missing-xrd}
 select(dt, xad)
 ```
-
 
 
 We get a missing value in return for `xad_mean`. This is because by default `mean()` requires non-missing values. We can remove the `NA` from `xad` before taking the mean by using `na.rm` argument inside `mean()`
@@ -125,18 +139,29 @@ summarize(dt,
 
 Using `across()` function  to apply a function to multiple columns in `summarize()`
 
+```{r}
+summarize(dt, across(c(sale, at, oibdp, xad), mean, na.rm = TRUE))
+```
+
+
 ```{r summarize-across}
-  summarize(dt,
+summarize(dt,
             across(
-              c(sale, at, oibdp, xad), \(x) mean(x, na.rm = TRUE)
+              c(sale, at, oibdp, xad), \(x) mean(x, na.rm = TRUE), .names = "{.col}_{.fn}_mean"
               )
             )
+
 ```
 
 
 ### Summaries by groups.
 
 Next, We want to find the averages of the above variables for each company separately. For this we can use `group_by()` function from `dplyr`
+
+
+```{r}
+dt_grouped = group_by(dt, conm)
+```
 
 
 ```{r summarize-group-by}
@@ -149,6 +174,17 @@ summarize(
   )
 ```
 
+```{r summarize-group-by2}
+summarize(dt,
+  sale_mean = mean(sale),
+  at_mean = mean(at),
+  oibdp_mean = mean(oibdp),
+  xad_mean = mean(xad, na.rm = TRUE),
+  .by = conm
+  )
+```
+
+
 ## Pipes
 
 This is where I would like to introduce the concept of pipes. Consider two steps to create a subset of `dt`. 
@@ -157,8 +193,14 @@ This is where I would like to introduce the concept of pipes. Consider two steps
 dt1 = select(dt, conm, fyear, sale)
 dt2 = filter(dt1, sale > 100000)
 
-
 ```
+
+```{r}
+dt2 = filter(
+  select(dt, conm, fyear, sale), 
+  sale > 100000)
+```
+
 
 These two steps can be combined into one step. Can you think of any reasons for why this is useful?
 
@@ -178,8 +220,8 @@ From https://www.techopedia.com/definition/3410/pipe
 We will use `%>%` to pipe output data from one `tidyverse` function to the next.
 This pipe originates from `magrittr` package. Read more about it here: https://magrittr.tidyverse.org/reference/pipe.html
 
-The keyboard shortcut is 
 
+The keyboard shortcut is 
 
 Shift + Command + M (Mac)
 Shift + Control + M (Windows)
@@ -198,7 +240,6 @@ dt %>%
 ```
 
 Can you create grouped means for each company?
-
 
 ```{r pipes-5}
 dt %>% 
@@ -237,7 +278,7 @@ When will the pipe fail?
 Case 1. When the object on left does not match the required object to the function on right
 
 ```{r pipes-fail-1}
-c("A", "B", "C") |> select(conm, fyear, sale)
+c("A", "B", "C") %>%  select(conm, fyear, sale)
 ```
 
 Case 2. When the object on left is passed to incorrect argument of the function on right
@@ -252,6 +293,11 @@ dt %>%
   summary()
 ```
 
+```{r}
+dt %>% 
+  lm(sale ~ at + cogs, data = .) %>% 
+  summary()
+```
 
 ### Joining dataframes
 
@@ -296,6 +342,11 @@ dt3 = left_join(dt1, dt1_summary_filtered, by = c("fyear"))
 ```{r print-left-join}
 dt3 
 ```
+
+```{r}
+
+```
+
 
 ### Transposing a dataframe
 
