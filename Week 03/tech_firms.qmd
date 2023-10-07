@@ -237,16 +237,19 @@ When will the pipe fail?
 Case 1. When the object on left does not match the required object to the function on right
 
 ```{r pipes-fail-1}
+#| eval: false
 c("A", "B", "C") |> select(conm, fyear, sale)
 ```
 
 Case 2. When the object on left is passed to incorrect argument of the function on right
 
 ```{r lm}
+
 summary(lm(formula = sale ~ at + cogs, data = dt))
 ```
 
 ```{r pipes-fail-2}
+#| eval: false
 dt %>% 
   lm(sale ~ at + cogs) %>% 
   summary()
